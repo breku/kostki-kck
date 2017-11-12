@@ -11,6 +11,12 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -99,7 +105,7 @@ public class CameraService {
 						for (MatOfPoint diceContour : diceContours) {
 							final double diceContourArea = Imgproc.contourArea(diceContour);
 
-							if (diceContourArea > 2000 && diceContourArea < 4000) {
+							if (diceContourArea > 2000 && diceContourArea < 10000) {
 
 								// get bounding rectangle
 								final Rect rect = Imgproc.boundingRect(diceContour);
@@ -126,14 +132,26 @@ public class CameraService {
 //
 //								}
 
-								FeatureDetector blobDetector;
-								blobDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+								try {
+									String params = "<?xml version=\"1.0\"?><opencv_storage><format>3</format><thresholdStep>10.</thresholdStep><minThreshold>50.</minThreshold><maxThreshold>220.</maxThreshold><minRepeatability>2</minRepeatability><minDistBetweenBlobs>10.</minDistBetweenBlobs><filterByColor>1</filterByColor><blobColor>0</blobColor><filterByArea>1</filterByArea><minArea>25.</minArea><maxArea>5000.</maxArea><filterByCircularity>0</filterByCircularity><minCircularity>8.0000001192092896e-01</minCircularity><maxCircularity>3.4028234663852886e+38</maxCircularity><filterByInertia>1</filterByInertia><minInertiaRatio>0.4</minInertiaRatio><maxInertiaRatio>3.4028234663852886e+38</maxInertiaRatio><filterByConvexity>1</filterByConvexity><minConvexity>9.4999998807907104e-01</minConvexity><maxConvexity>3.4028234663852886e+38</maxConvexity></opencv_storage>";
+									File outputFile = File.createTempFile("params", ".xml");
+									Files.write( outputFile.toPath(), params.getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE);
+
+
+
+
+
+								FeatureDetector blobDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
 								MatOfKeyPoint keypoints = new MatOfKeyPoint();
-								blobDetector.detect(dice, keypoints);
-								blobDetector.read(getClass().getResource("/").getPath()+"blobReaderParameters.xml");
+									blobDetector.read(outputFile.getPath());
+									blobDetector.detect(dice, keypoints);
 								log.log(Level.INFO, "" + keypoints.size());
 								updateImageView(image3, Utils.mat2Image(dice));
 
+
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 								// threshold
 //								cv::threshold(dice, dice, 150, 255, cv::THRESH_BINARY | CV_THRESH_OTSU );
 
