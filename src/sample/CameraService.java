@@ -143,10 +143,13 @@ public class CameraService {
 
 								FeatureDetector blobDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
 								MatOfKeyPoint keypoints = new MatOfKeyPoint();
-									blobDetector.read(outputFile.getPath());
-									blobDetector.detect(dice, keypoints);
-								log.log(Level.INFO, "" + keypoints.size());
+								blobDetector.read(outputFile.getPath());
+								blobDetector.detect(dice, keypoints);
+								log.log(Level.INFO, "" + keypoints.size().height);
 								updateImageView(image3, Utils.mat2Image(dice));
+
+								Imgproc.putText(frame,"Val:"+(int)keypoints.size().height,new Point(rect.x,rect.y+rect.height+20),Core.FONT_HERSHEY_COMPLEX_SMALL,0.8,new Scalar(255),1,8,false);
+								updateImageView(image1, Utils.mat2Image(frame));
 
 
 								} catch (IOException e) {
