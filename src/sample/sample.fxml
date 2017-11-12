@@ -10,13 +10,14 @@
 
     <HBox alignment="center"  GridPane.columnIndex="3" GridPane.rowIndex="0" >
         <Button fx:id="button" alignment="center" onAction="#startCamera" text="Start Camera" />
+        <Button fx:id="saveBackgroundImage" alignment="center" onAction="#saveBackgroundImage" text="Save background image" />
     </HBox>
 
-    <ImageView fx:id="currentFrame"  GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-    <ImageView fx:id="readImage"  GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+    <ImageView fx:id="image1" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+    <ImageView fx:id="image2" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
 
-    <ImageView fx:id="histImage1"  GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-    <ImageView fx:id="histImage2"  GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+    <ImageView fx:id="image3"  GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+
 
 
     <Label fx:id="histogramCompareResult"  GridPane.columnIndex="0" GridPane.rowIndex="2"/>

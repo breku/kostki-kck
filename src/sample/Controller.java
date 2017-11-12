@@ -17,21 +17,20 @@ public class Controller implements Initializable {
 	@FXML
 	private Button button;
 
+
+	@FXML
+	private Button saveBackgroundImage;
+
 	// the FXML image view
 	@FXML
-	private ImageView currentFrame;
+	private ImageView image1;
 
 	@FXML
-	private ImageView readImage;
+	private ImageView image2;
 
 	@FXML
-	private ImageView histImage1;
+	private ImageView image3;
 
-	@FXML
-	private ImageView histImage2;
-
-	@FXML
-	private Label histogramCompareResult;
 
 
 	private CameraService cameraService;
@@ -66,9 +65,10 @@ public class Controller implements Initializable {
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
-		cameraService = new CameraService(button, currentFrame, histogramCompareResult,histImage1,histImage2);
-		imageReader = new ImageReader();
-		Image imageToShow = Utils.mat2Image(imageReader.readImage());
-		Utils.onFXThread(readImage.imageProperty(), imageToShow);
+		cameraService = new CameraService(button,saveBackgroundImage, image1,image2,image3);
+	}
+
+	public void saveBackgroundImage(ActionEvent actionEvent) {
+		cameraService.saveBackgroundImage();
 	}
 }

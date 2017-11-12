@@ -1,25 +1,27 @@
 package sample;
 
-import javafx.application.Platform;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
+import lombok.extern.java.Log;
+import org.opencv.core.*;
+import org.opencv.features2d.FeatureDetector;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 /**
  * Created by breku on 11.11.17.
  */
+@Log
 public class CameraService {
 
 	// the id of the camera to be used
@@ -27,13 +29,14 @@ public class CameraService {
 
 	private final Button button;
 
-	private final ImageView currentFrame;
+	private final ImageView image1;
 
-	private final Label histogramCompareResult;
+	private final ImageView image2;
 
-	private final ImageView histImage1;
+	private final ImageView image3;
 
-	private final ImageView histImage2;
+	private final Button saveBackgroundImage;
+
 
 	// a timer for acquiring the video stream
 	private ScheduledExecutorService timer;
@@ -48,14 +51,16 @@ public class CameraService {
 
 	private FrameService frameService = new FrameService(capture);
 
-	public CameraService(Button button, ImageView currentFrame, Label histogramCompareResult, ImageView histImage1, ImageView histImage2) {
-		this.button = button;
-		this.currentFrame = currentFrame;
-		this.histogramCompareResult = histogramCompareResult;
-		this.histImage1 = histImage1;
-		this.histImage2 = histImage2;
-	}
+	private boolean backgroundExists;
 
+
+	public CameraService(Button button, Button saveBackgroundImage, ImageView image1, ImageView image2, ImageView image3) {
+		this.button = button;
+		this.saveBackgroundImage = saveBackgroundImage;
+		this.image1 = image1;
+		this.image2 = image2;
+		this.image3 = image3;
+	}
 
 	public void startCamera(ActionEvent event) {
 		if (!this.cameraActive) {
@@ -71,35 +76,84 @@ public class CameraService {
 					// effectively grab and process a single frame
 					Mat frame = frameService.grabFrame();
 
-					final Mat readImage = imageReader.readImage();
-					if (!readImage.empty() && !frame.empty()) {
-						Mat readImageResized = new Mat();
-						Imgproc.resize(readImage, readImageResized, frame.size());
+
+					updateImageView(image1, Utils.mat2Image(frame));
+					if (backgroundExists && !frame.empty()) {
+						final Mat backgroundMat = imageReader.readImage("background.jpg");
+						updateImageView(image2, Utils.mat2Image(backgroundMat));
+
+						final Mat diffMat = new Mat();
+						Core.absdiff(backgroundMat, frame, diffMat);
+
+						final Mat diffWithThreshold0Mat = new Mat();
+						Imgproc.threshold(diffMat, diffWithThreshold0Mat, 100, 255, Imgproc.THRESH_BINARY);
 
 
-						Mat image1 = new Mat();
-						Mat image2 = new Mat();
+						Imgproc.Canny(diffWithThreshold0Mat, diffWithThreshold0Mat, 2, 2 * 2, 3, false);
+
+						List<MatOfPoint> diceContours = new ArrayList<>();
+						Mat diceHierarchy = new Mat();
+						Imgproc.findContours(diffWithThreshold0Mat, diceContours, diceHierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE);
+
+//						Imgproc.drawContours(diffWithThreshold0Mat,diceContours,-1,new Scalar(255,100,100));
+						for (MatOfPoint diceContour : diceContours) {
+							final double diceContourArea = Imgproc.contourArea(diceContour);
+
+							if (diceContourArea > 2000 && diceContourArea < 4000) {
+
+								// get bounding rectangle
+								final Rect rect = Imgproc.boundingRect(diceContour);
+
+//								cv::Rect rect = cv::boundingRect( cv::Mat(diceContours[i]) );
+								// set dice roi
+//
+//								Mat dice = diffWithThreshold0Mat.adjustROI(rect.height, rect.width, rect.x, rect.y);
+								Mat dice = diffMat.submat(rect);
+
+								// resize
+								Imgproc.resize(dice, dice,new Size(150,150));
+								Imgproc.threshold(dice, dice, 150, 255, Imgproc.THRESH_BINARY);
+
+								// floodfill
+
+								Imgproc.floodFill(dice,new Mat(),new Point(0,0),new Scalar(255));
+								Imgproc.floodFill(dice,new Mat(),new Point(0,149),new Scalar(255));
+								Imgproc.floodFill(dice,new Mat(),new Point(149,0),new Scalar(255));
+								Imgproc.floodFill(dice,new Mat(),new Point(149,149),new Scalar(255));
+								// convert to grayscale
+//								if(!dice.empty()){
+//									Imgproc.cvtColor(dice, dice, Imgproc.COLOR_BGR2GRAY);
+//
+//								}
+
+								FeatureDetector blobDetector;
+								blobDetector = FeatureDetector.create(FeatureDetector.SIMPLEBLOB);
+								MatOfKeyPoint keypoints = new MatOfKeyPoint();
+								blobDetector.detect(dice, keypoints);
+								blobDetector.read(getClass().getResource("/").getPath()+"blobReaderParameters.xml");
+								log.log(Level.INFO, "" + keypoints.size());
+								updateImageView(image3, Utils.mat2Image(dice));
+
+								// threshold
+//								cv::threshold(dice, dice, 150, 255, cv::THRESH_BINARY | CV_THRESH_OTSU );
 
 
-						readImageResized.convertTo(image1, CvType.CV_32F);
-						frame.convertTo(image2, CvType.CV_32F);
+								// floodfill
+//								cv::floodFill(dice, cv::Point(0,0), cv::Scalar(255));
+//								cv::floodFill(dice, cv::Point(0,149), cv::Scalar(255));
+//								cv::floodFill(dice, cv::Point(149,0), cv::Scalar(255));
+//								cv::floodFill(dice, cv::Point(149,149), cv::Scalar(255));
+//								cv::Mat diceROI = frame(rect);
 
-						double res = Imgproc.compareHist(image1, image2, Imgproc.CV_COMP_CORREL);
+								// count number of pips
+//								int numberOfPips = countPips(diceROI);
 
-						Image imageToShow1= Utils.mat2Image(readImageResized);
-						Image imageToShow2= Utils.mat2Image(frame);
-						updateImageView(histImage1, imageToShow1);
-						updateImageView(histImage2, imageToShow2);
+							}
+						}
 
-						final String format = String.format("Histogram compare result: %s", res);
-						Platform.runLater(() -> {
-							histogramCompareResult.textProperty().set(format);
-						});
+
 					}
 
-					// convert and show the frame
-					Image imageToShow = Utils.mat2Image(frame);
-					updateImageView(currentFrame, imageToShow);
 				};
 
 				this.timer = Executors.newSingleThreadScheduledExecutor();
@@ -126,7 +180,6 @@ public class CameraService {
 		Utils.onFXThread(view.imageProperty(), image);
 	}
 
-
 	/**
 	 * Stop the acquisition from the camera and release all the resources
 	 */
@@ -148,4 +201,14 @@ public class CameraService {
 		}
 	}
 
+	public void saveBackgroundImage() {
+		if (this.cameraActive && this.capture.isOpened()) {
+			backgroundExists = true;
+			Mat frame = frameService.grabFrame();
+			final String format = String.format("%s%s.jpg", getClass().getResource("img/").getPath(), "background");
+			log.log(Level.INFO, "> Saving image to " + format);
+			Imgcodecs.imwrite(format, frame);
+			log.log(Level.INFO, "< Finished");
+		}
+	}
 }
