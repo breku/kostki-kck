@@ -13,15 +13,12 @@ import java.util.ResourceBundle;
 
 public class Controller implements Initializable {
 
-	// the FXML button
 	@FXML
 	private Button button;
-
 
 	@FXML
 	private Button saveBackgroundImage;
 
-	// the FXML image view
 	@FXML
 	private ImageView image1;
 
@@ -31,12 +28,7 @@ public class Controller implements Initializable {
 	@FXML
 	private ImageView image3;
 
-
-
 	private CameraService cameraService;
-
-	private ImageReader imageReader;
-
 
 	/**
 	 * The action triggered by pushing the button on the GUI
