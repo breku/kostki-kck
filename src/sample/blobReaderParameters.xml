@@ -15,7 +15,7 @@
 <minCircularity>8.0000001192092896e-01</minCircularity>
 <maxCircularity>3.4028234663852886e+38</maxCircularity>
 <filterByInertia>1</filterByInertia>
-<minInertiaRatio>0.9</minInertiaRatio>
+<minInertiaRatio>0.4</minInertiaRatio>
 <maxInertiaRatio>3.4028234663852886e+38</maxInertiaRatio>
 <filterByConvexity>1</filterByConvexity>
 <minConvexity>9.4999998807907104e-01</minConvexity>
