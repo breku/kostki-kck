@@ -44,25 +44,23 @@ public class FrameGrabber implements Runnable {
 		if (!frame.empty()) {
 			updateImageView(image1, Utils.mat2Image(frame));
 		}
-		if (backgroundService.isBackgroundExists() && !frame.empty()) {
-			final Mat backgroundMat = imageReader.readImage("background.jpg");
-			updateImageView(image2, Utils.mat2Image(backgroundMat));
+		if (!frame.empty()) {
 
 
-			// Difference between current gray frame and gray background
-			final Mat diffMat = new Mat();
-			final Mat currentGrayFrame = frameService.grabGrayFrame();
-			Core.absdiff(backgroundMat, currentGrayFrame, diffMat);
+			final Mat greyFrame = frameService.grabGrayFrame();
 
 
 			//Threshold
 			final Mat diffWithThreshold0Mat = new Mat();
-			Imgproc.threshold(diffMat, diffWithThreshold0Mat, 100, 255, Imgproc.THRESH_BINARY);
+			Imgproc.threshold(greyFrame, diffWithThreshold0Mat, 150, 255, Imgproc.THRESH_BINARY);
 
 			//Canny
 			Imgproc.Canny(diffWithThreshold0Mat, diffWithThreshold0Mat, 2, 2 * 2, 3, false);
 
-			//Countours
+
+			updateImageView(image2, Utils.mat2Image(diffWithThreshold0Mat));
+
+//			//Countours
 			List<MatOfPoint> diceContours = new ArrayList<>();
 			Mat diceHierarchy = new Mat();
 			Imgproc.findContours(diffWithThreshold0Mat, diceContours, diceHierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -70,10 +68,10 @@ public class FrameGrabber implements Runnable {
 			for (MatOfPoint diceContour : diceContours) {
 				final double diceContourArea = Imgproc.contourArea(diceContour);
 
-				if (diceContourArea > 2000 && diceContourArea < 10000) {
+ 				if (diceContourArea > 2000 && diceContourArea < 10000) {
 					// get bounding rectangle
 					final Rect rect = Imgproc.boundingRect(diceContour);
-					Mat dice = diffMat.submat(rect);
+					Mat dice = greyFrame.submat(rect);
 
 					//Resize, Threshold
 					Imgproc.resize(dice, dice,new Size(150,150));
@@ -97,7 +95,7 @@ public class FrameGrabber implements Runnable {
 					updateImageView(image3, Utils.mat2Image(dice));
 
 
-					Imgproc.putText(frame,"Val:"+(int)keypoints.size().height,new Point(rect.x,rect.y+rect.height+20),Core.FONT_HERSHEY_COMPLEX_SMALL,0.8,new Scalar(255,0,0),1,8,false);
+					Imgproc.putText(frame,"Val:"+(int)keypoints.size().height,new Point(rect.x,rect.y+rect.height+20),Core.FONT_HERSHEY_COMPLEX_SMALL,0.8,new Scalar(0,0,255),1,8,false);
 					Imgproc.rectangle(frame,rect.tl(),rect.br(),new Scalar(0,153,255),5,8,0);
 					updateImageView(image1, Utils.mat2Image(frame));
 
