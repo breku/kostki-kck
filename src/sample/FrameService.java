@@ -7,9 +7,7 @@ import org.opencv.videoio.VideoCapture;
 
 import java.util.logging.Level;
 
-/**
- * Created by breku on 11.11.17.
- */
+
 @Log
 public class FrameService {
 

@@ -55,14 +55,14 @@ public class FrameGrabber implements Runnable {
 			Core.absdiff(backgroundMat, currentGrayFrame, diffMat);
 
 
-
+			//Threshold
 			final Mat diffWithThreshold0Mat = new Mat();
 			Imgproc.threshold(diffMat, diffWithThreshold0Mat, 100, 255, Imgproc.THRESH_BINARY);
 
-
+			//Canny
 			Imgproc.Canny(diffWithThreshold0Mat, diffWithThreshold0Mat, 2, 2 * 2, 3, false);
 
-
+			//Countours
 			List<MatOfPoint> diceContours = new ArrayList<>();
 			Mat diceHierarchy = new Mat();
 			Imgproc.findContours(diffWithThreshold0Mat, diceContours, diceHierarchy, 0, Imgproc.CHAIN_APPROX_SIMPLE);
@@ -75,7 +75,7 @@ public class FrameGrabber implements Runnable {
 					final Rect rect = Imgproc.boundingRect(diceContour);
 					Mat dice = diffMat.submat(rect);
 
-
+					//Resize, Threshold
 					Imgproc.resize(dice, dice,new Size(150,150));
 					Imgproc.threshold(dice, dice, 150, 255, Imgproc.THRESH_BINARY);
 
@@ -97,7 +97,7 @@ public class FrameGrabber implements Runnable {
 					updateImageView(image3, Utils.mat2Image(dice));
 
 
-					Imgproc.putText(frame,"Val:"+(int)keypoints.size().height,new Point(rect.x,rect.y+rect.height+20),Core.FONT_HERSHEY_COMPLEX_SMALL,0.8,new Scalar(255),1,8,false);
+					Imgproc.putText(frame,"Val:"+(int)keypoints.size().height,new Point(rect.x,rect.y+rect.height+20),Core.FONT_HERSHEY_COMPLEX_SMALL,0.8,new Scalar(255,0,0),1,8,false);
 					Imgproc.rectangle(frame,rect.tl(),rect.br(),new Scalar(0,153,255),5,8,0);
 					updateImageView(image1, Utils.mat2Image(frame));
 
